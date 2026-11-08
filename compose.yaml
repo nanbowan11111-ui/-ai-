@@ -1,0 +1,43 @@
+name: office-supplies-ledger
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: office-supplies-mysql
+    environment:
+      MYSQL_DATABASE: office_ledger
+      MYSQL_USER: office_app
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+      TZ: Asia/Shanghai
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  ledger:
+    build: .
+    image: office-supplies-ledger:local
+    container_name: office-supplies-ledger
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:mysql://db:3306/office_ledger?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+      DB_USERNAME: office_app
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      MODEL_API_KEY: ${MODEL_API_KEY:-}
+      MODEL_NAME: ${MODEL_NAME:-deepseek-chat}
+      MODEL_BASE_URL: ${MODEL_BASE_URL:-https://api.deepseek.com}
+    restart: unless-stopped
+
+volumes:
+  mysql_data:

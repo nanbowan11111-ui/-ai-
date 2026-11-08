@@ -1,0 +1,10 @@
+.git
+.gitignore
+.idea
+.vscode
+.env
+data
+backend/target/*
+!backend/target/supplies-ledger-0.1.0.jar
+target/
+*.log

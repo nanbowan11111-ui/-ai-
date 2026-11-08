@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>办公用品库存台账</title>
+  <link rel="stylesheet" href="/styles.css?v=20261108-chat-import">
+  <script src="/vendor/lucide.min.js" defer></script>
+  <script src="/app.js?v=20261108-chat-isolation" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">库</span><div><strong>办公用品管理</strong><small>库存与领用</small></div></div>
+    <div class="top-actions">
+      <span class="user-label">当前用户</span>
+      <select id="user" aria-label="当前用户"><option>李华</option><option>陈晨</option><option>王经理</option></select>
+    </div>
+  </header>
+  <div class="workspace">
+    <main class="main">
+      <div class="page-head">
+        <div><div class="eyebrow">库存台账</div><h1 id="page-title">当前库存</h1><p id="page-subtitle">物料余额与安全库存状态</p></div>
+        <div class="head-actions">
+          <button id="export" class="button secondary"><i data-lucide="download"></i>导出台账</button>
+          <button id="show-import" class="button primary"><i data-lucide="upload"></i>导入入库单</button>
+        </div>
+      </div>
+      <nav class="tabs" aria-label="视图"><button class="tab active" data-view="inventory">库存台账</button><button class="tab" data-view="requests">领用申请</button><button class="tab" data-view="movements">出入库流水</button></nav>
+      <div id="notice" class="notice" hidden></div>
+      <section id="inventory-view" class="view">
+        <p id="initial-stock-status" class="initial-stock-status" hidden></p>
+        <div class="metrics"><div><span>已建档物料</span><strong id="material-count">—</strong></div><div><span>低于安全库存</span><strong id="low-count">—</strong></div><div><span>待审批申请</span><strong id="pending-count">—</strong></div></div>
+        <div class="list-head"><h2>物料清单</h2><input id="search" type="search" placeholder="搜索物料名称或编码" aria-label="搜索物料"></div>
+        <div class="table-scroll"><table><thead><tr><th>物料编码</th><th>物料名称</th><th>规格型号</th><th>单位</th><th class="num">当前库存</th><th class="num">安全库存</th><th>状态</th></tr></thead><tbody id="materials"></tbody></table></div>
+      </section>
+      <section id="requests-view" class="view" hidden>
+        <div class="list-head"><h2 id="request-list-title">领用申请</h2><button id="new-request" class="button primary"><i data-lucide="plus"></i>新建申请</button></div>
+        <div class="table-scroll"><table><thead><tr><th>申请单</th><th>申请人</th><th>物料与数量</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead><tbody id="requests"></tbody></table></div>
+      </section>
+      <section id="movements-view" class="view" hidden>
+        <div class="list-head"><h2>出入库流水</h2><span class="muted">最近 100 条</span></div>
+        <div class="table-scroll"><table><thead><tr><th>时间</th><th>类型</th><th>单号</th><th>物料</th><th class="num">变动数量</th><th class="num">变动后库存</th><th>操作人</th></tr></thead><tbody id="movements"></tbody></table></div>
+      </section>
+    </main>
+    <aside class="assistant-panel">
+      <div class="assistant-head"><div><span class="assistant-icon"><i data-lucide="message-square-text"></i></span><strong>台账助手</strong></div><span class="online-dot" title="助手已就绪"></span></div>
+      <div id="messages" class="messages" aria-live="polite"><div class="message assistant">可以查询库存、提交领用申请、查看待审批申请、导出台账，或把入库单 Excel 拖到下方聊天栏。</div></div>
+      <div id="chat-confirm" class="chat-confirm" hidden><button id="confirm-approval" class="button primary">确认审批通过</button><button id="cancel-approval" class="button secondary">取消</button></div>
+      <form id="chat-form" class="chat-form"><input id="chat-file" type="file" accept=".xlsx" hidden><button id="chat-upload" type="button" class="icon-button attach" title="选择入库单 Excel，也可拖入聊天栏" aria-label="选择入库单 Excel"><i data-lucide="paperclip"></i></button><input id="chat-input" autocomplete="off" placeholder="输入消息，或拖入入库单 Excel…" aria-label="聊天消息"><button class="icon-button" title="发送消息" aria-label="发送消息"><i data-lucide="arrow-up"></i></button><span id="chat-drop-hint" class="chat-drop-hint" aria-hidden="true">松开文件，预览入库单</span></form>
+    </aside>
+  </div>
+  <dialog id="import-dialog"><div class="dialog-head"><div><h2>导入入库单</h2><p>先预览校验结果，确认后才更新库存</p></div><button class="icon-button close" data-close="import-dialog" title="关闭" aria-label="关闭"><i data-lucide="x"></i></button></div><div class="dialog-body"><input id="receipt-file" type="file" accept=".xlsx" aria-describedby="import-status"><p id="import-status" class="import-status" role="status">请选择“入库单-RK-…”文件，然后预览单据。</p><div id="preview" hidden></div></div><div class="dialog-actions"><button class="button secondary" data-close="import-dialog">取消</button><button id="preview-button" class="button secondary">预览单据</button><button id="confirm-import" class="button primary" disabled title="请先预览有效的入库单">确认入账</button></div></dialog>
+  <dialog id="request-dialog"><div class="dialog-head"><div><h2>新建领用申请</h2><p>提交后等待审批，此时不会扣减库存</p></div><button class="icon-button close" data-close="request-dialog" title="关闭" aria-label="关闭"><i data-lucide="x"></i></button></div><div class="dialog-body"><div id="request-items"></div><button id="add-item" class="button secondary"><i data-lucide="plus"></i>添加物料</button></div><div class="dialog-actions"><button class="button secondary" data-close="request-dialog">取消</button><button id="submit-request" class="button primary">提交申请</button></div></dialog>
+  <dialog id="detail-dialog"><div class="dialog-head"><div><h2 id="detail-title">申请详情</h2><p id="detail-subtitle"></p></div><button class="icon-button close" data-close="detail-dialog" title="关闭" aria-label="关闭"><i data-lucide="x"></i></button></div><div class="dialog-body"><div id="detail-body"></div><div id="approval-progress" class="approval-progress" aria-label="审批进度"></div></div><div id="detail-actions" class="dialog-actions" hidden><button id="withdraw-request" class="button danger" hidden>撤回申请</button><button id="reject-request" class="button danger" hidden>驳回</button><button id="approve-request" class="button primary" hidden>审批通过</button></div></dialog>
+</body>
+</html>
